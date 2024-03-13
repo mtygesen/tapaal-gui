@@ -135,7 +135,7 @@ public class VerifyTAPNOptions extends VerificationOptions{
 			System.out.println("entry: "+ s);
 		}
 
-		return sb.append(rawVerificationOptions).toString().split(" ");
+		return test;
 	}
 	
 	@Override
