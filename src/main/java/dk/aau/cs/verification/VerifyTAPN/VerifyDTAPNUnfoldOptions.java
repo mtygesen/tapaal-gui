@@ -1,23 +1,21 @@
 package dk.aau.cs.verification.VerifyTAPN;
 
-import com.sun.jna.Platform;
+import java.util.List;
+
 import dk.aau.cs.verification.VerificationOptions;
 import net.tapaal.gui.petrinet.verification.TAPNQuery;
 
 public class VerifyDTAPNUnfoldOptions extends VerificationOptions {
     private final String modelOut;
     private final String queryOut;
-    private final int tokenSize;
     private final int numQueries;
 
-    public VerifyDTAPNUnfoldOptions(String modelOut, String queryOut, int tokenSize, int numQueries) {
+    public VerifyDTAPNUnfoldOptions(String modelOut, String queryOut, int numQueries) {
         this.modelOut = modelOut;
         this.queryOut = queryOut;
-        this.tokenSize = tokenSize;
         this.numQueries = numQueries;
     }
 
-    
     @Override
     public boolean enabledOverApproximation() {
         return false;
@@ -52,24 +50,21 @@ public class VerifyDTAPNUnfoldOptions extends VerificationOptions {
     }
 
     @Override
-    public String toString() {
-        StringBuilder result = new StringBuilder();
-        result.append(writeUnfolded());
-        result.append(" --search-strategy OverApprox --xml-queries ");
-        for (int i = 0; i < numQueries; ++i){
-            if (i != 0) result.append(",");
-            result.append(i + 1);
+    public List<String> getOptions() {
+        options.clear();
+
+        add("--write-unfolded-queries", queryOut);
+        add("--write-unfolded-net", modelOut);
+        add("--search-strategy", "OverApprox");
+
+        String queryIndexList = "1";
+        for (int i = 2; i <= numQueries; i++){
+            queryIndexList += "," + i;
         }
-        result.append(" --bindings ");
+        add("--xml-queries", queryIndexList);
 
-        return result.toString();
-    }
+        add("--bindings");
 
-    private String writeUnfolded() {
-        if (Platform.isWindows()) {
-            return " --write-unfolded-queries " + "\"" + queryOut + "\"" + " --write-unfolded-net " + "\"" + modelOut + "\"";
-        }
-
-        return " --write-unfolded-queries " + queryOut + " --write-unfolded-net " + modelOut + ' ';
+        return options;
     }
 }

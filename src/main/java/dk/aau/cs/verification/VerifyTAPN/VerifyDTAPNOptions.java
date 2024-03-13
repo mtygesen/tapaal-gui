@@ -9,6 +9,7 @@ import net.tapaal.gui.petrinet.verification.InclusionPlaces;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.List;
 
 public class VerifyDTAPNOptions extends VerifyTAPNOptions {
 	
@@ -100,53 +101,44 @@ public class VerifyDTAPNOptions extends VerifyTAPNOptions {
 	}
 	
 	@Override
-	public String toString() {
-		StringBuilder result = new StringBuilder();
-	
+	public List<String> getOptions() {
+		options.clear();
+
 		if (useRawVerification && rawVerificationOptions != null) {
-			return rawVerificationString(rawVerificationOptions, traceArg(traceOption));
+			add(rawVerificationString(rawVerificationOptions, traceArg(traceOption)));
+			return options;
 		}
 
-        result.append(kBoundArg());
-        result.append(deadTokenArg());
-        result.append(traceArg(traceOption));
-        if(unfold && trace() != TraceOption.NONE)
-        {
-            result.append(writeUnfolded());
+		add("--k-bound", Integer.toString(kBound()));
+		add(deadTokenArg());
+		add(traceArg(traceOption).split(" "));
 
-			result.append(" --bindings ");
-        }
-        result.append(searchArg(searchOption));
-		result.append("--verification-method ");
-		result.append(timeDarts ? "1" : "0");
-		result.append(' ');
-		result.append("--memory-optimization ");
-		result.append(pTrie ? "1" : "0");
-		if (! useStubbornReduction) {
-			result.append(" --disable-partial-order ");
+		if (unfold && trace() != TraceOption.NONE) {
+			add("--write-unfolded-queries", unfoldedQueriesPath);
+			add("--write-unfolded-net", unfoldedModelPath);
+			add("--bindings");
 		}
-		if(workflow == WorkflowMode.WORKFLOW_SOUNDNESS){
-			result.append(" --workflow 1 ");
-		} else if(workflow == WorkflowMode.WORKFLOW_STRONG_SOUNDNESS){
-			result.append(" --workflow 2 ");
-			result.append(" --strong-workflow-bound ");
-			result.append(workflowbound);
+
+		add(searchArg(searchOption).split(" "));
+		add("--verification-method", timeDarts ? "1" : "0");
+		add("--memory-optimization", pTrie ? "1" : "0");
+
+		if (!useStubbornReduction) {
+			add("--disable-partial-order");
 		}
-		result.append(' ');
+
+		if (workflow == WorkflowMode.WORKFLOW_SOUNDNESS){
+			add("--workflow", "1");
+		} else if (workflow == WorkflowMode.WORKFLOW_STRONG_SOUNDNESS){
+			add("--workflow", "2");
+			add("--strong-workflow-bound", Long.toString(workflowbound));
+		}
 
 		if (workflow != WorkflowMode.WORKFLOW_SOUNDNESS && workflow != WorkflowMode.WORKFLOW_STRONG_SOUNDNESS) {
-			result.append(gcd ? " --gcd-lower " : ""); // GCD optimization is not sound for workflow analysis
+			add(gcd ? "--gcd-lower" : ""); // GCD optimization is not sound for workflow analysis
 		}
 
-		return result.toString();
-	}
-
-	private String writeUnfolded() {
-		if (Platform.isWindows()) {
-			return " --write-unfolded-queries " + "\"" + unfoldedQueriesPath + "\"" + " --write-unfolded-net " + "\"" + unfoldedModelPath + "\"";
-		}
-
-		return " --write-unfolded-queries " + unfoldedQueriesPath + " --write-unfolded-net " + unfoldedModelPath + ' ';
+		return options;
 	}
 
 	public boolean timeDarts() {

@@ -2,6 +2,7 @@ package dk.aau.cs.verification.VerifyTAPN;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 
 import com.sun.jna.Platform;
@@ -187,104 +188,94 @@ public class VerifyPNOptions extends VerifyTAPNOptions{
     }
 
     @Override
-	public String toString() {
-		StringBuilder result = new StringBuilder();
-    
+    public List<String> getOptions() {
+        options.clear();
+
         if (useRawVerification && rawVerificationOptions != null) {
-			return rawVerificationString(rawVerificationOptions, traceMap.get(traceOption));
-		}
-
-		result.append(kBoundArg());
-
-        var traceSwitch =traceMap.get(traceOption) ;
-        if (traceSwitch != null) {
-            result.append(traceSwitch + " ");
+            add(rawVerificationString(rawVerificationOptions, traceMap.get(traceOption)));
+            return options;
         }
 
-        var searchSwitch = searchMap.get(searchOption);
-        if (searchSwitch != null) {
-            result.append(searchSwitch + " ");
+        add("--k-bound", Integer.toString(kBound()));
+        add(traceMap.get(traceOption));
+        add(searchMap.get(searchOption).split(" "));
+
+        switch (getModelReduction()) {
+            case AGGRESSIVE:
+                add("--reduction", "1");
+                if (reducedModelPath != null && !reducedModelPath.isEmpty()){
+                    add("--write-reduced", reducedModelPath);
+                }
+                break;
+            case NO_REDUCTION:
+                add("--reduction", "0");
+                break;
+            case BOUNDPRESERVING:
+                add("--reduction", "2");
+                if (reducedModelPath != null && !reducedModelPath.isEmpty()){
+                    add("--write-reduced", reducedModelPath);
+                }
+                break;
+            default:
+                break;
         }
-
-		switch(getModelReduction()){
-		case AGGRESSIVE:
-			result.append(" --reduction 1 ");
-			if(reducedModelPath != null && !reducedModelPath.isEmpty()){
-                result.append(" --write-reduced " + reducedModelPath);
-            }
-
-			break;
-		case NO_REDUCTION:
-			result.append(" --reduction 0 ");
-
-			break;
-		case BOUNDPRESERVING:
-			result.append(" --reduction 2 ");
-            if(reducedModelPath != null && !reducedModelPath.isEmpty()){
-                result.append(" --write-reduced " +reducedModelPath);
-            }
-            break;
-		default:
-			break;			
-		}
 
         if (unfold) {
-            result.append(" --write-unfolded-net ");
-            result.append(unfoldedModelPath);
-            result.append(" --write-unfolded-queries ");
-            result.append(unfoldedQueriesPath);
-            result.append(" --bindings ");
+            add("--write-unfolded-net", unfoldedModelPath);
+            add("--write-unfolded-queries", unfoldedQueriesPath);
+            add("--bindings");
         }
 
-		if (this.queryCategory == QueryCategory.CTL){
-			result.append(" --ctl-algorithm " + (getAlgorithmOption() == AlgorithmOption.CERTAIN_ZERO ? "czero" : "local"));
-			result.append(" --xml-queries 1");
-		} else if (this.queryCategory == QueryCategory.LTL || this.queryCategory == QueryCategory.HyperLTL) {
-            result.append(" --ltl-algorithm");
-            if (!this.useTarjan) {
-                result.append(" ndfs");
+        if (queryCategory == QueryCategory.CTL){
+            add("--ctl-algorithm", getAlgorithmOption() == AlgorithmOption.CERTAIN_ZERO ? "czero" : "local");
+            add("--xml-queries", "1");
+        } else if (queryCategory == QueryCategory.LTL || queryCategory == QueryCategory.HyperLTL) {
+            add("--ltl-algorithm", useTarjan ? "" : "ndfs");
+            add("--xml-queries", "1");
+        }
+
+        if (useSiphontrap) {
+            add("--siphon-trap", "10");
+        }
+
+        if (queryReductionTime == QueryReductionTime.NoTime) {
+            add("--query-reduction", "0");
+        } else if (queryReductionTime == QueryReductionTime.ShortestTime) {
+            add("--query-reduction", "1");
+        }
+
+        if (!useStubbornReduction) {
+            add("--disable-partial-order");
+        }
+
+        if (useTarOption) {
+            add("--trace-abstraction");
+        }
+
+        if (colored) {
+            if (!partition) {
+                add("--disable-partitioning");
             }
-            result.append(" --xml-queries 1");
-        }
-		if (this.useSiphontrap) {
-			result.append(" --siphon-trap 10 ");
-		}
-		if (this.queryReductionTime == QueryReductionTime.NoTime) {
-			result.append(
-			    " --query-reduction 0 ");
-		} else if (this.queryReductionTime == QueryReductionTime.ShortestTime) {
-		    //Run query reduction for 1 second, to avoid conflict with -s OverApprox argument, but also still not run the verification.
-		    result.append(" --query-reduction 1 ");
-        }
-		if (!this.useStubbornReduction) {
-			result.append(" --disable-partial-order ");
-		}
-		if (this.useTarOption) {
-		    result.append(" --trace-abstraction ");
-        }
-		if (colored) {
-            if (!this.partition) {
-                result.append(" --disable-partitioning ");
-            }
-            if (!this.colorFixpoint) {
-                result.append(" --disable-cfp ");
+            if (!colorFixpoint) {
+                add("--disable-cfp");
             }
             if (!symmetricVars) {
-                result.append(" --disable-symmetry-vars ");
+                add("--disable-symmetry-vars");
             }
         }
-		if (!this.useColoredReduction) {
-		    result.append(" --col-reduction 0 ");
+
+        if (!useColoredReduction) {
+            add("--col-reduction", "0");
         }
 
-		return result.toString();
-	}
+        return options;
+    }
 	
 	public ModelReduction getModelReduction(){
 		return modelReduction;
 	}
 	
 	public AlgorithmOption getAlgorithmOption(){
-		return this.algorithmOption;
+		return algorithmOption;
 	}
 }

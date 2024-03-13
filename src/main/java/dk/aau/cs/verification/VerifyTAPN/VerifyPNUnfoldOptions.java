@@ -3,14 +3,9 @@ package dk.aau.cs.verification.VerifyTAPN;
 import dk.aau.cs.verification.VerificationOptions;
 import net.tapaal.gui.petrinet.verification.TAPNQuery;
 
-import java.util.HashMap;
-import java.util.Map;
-
-import com.sun.jna.Platform;
+import java.util.List;
 
 public class VerifyPNUnfoldOptions extends VerificationOptions {
-
-    private static final Map<TAPNQuery.SearchOption, String> searchMap = createSearchOptionsMap();
     private final String modelOut;
     private final String queryOut;
     private final int numQueries;
@@ -61,46 +56,37 @@ public class VerifyPNUnfoldOptions extends VerificationOptions {
     }
 
     @Override
-    public String toString() {
-        StringBuilder result = new StringBuilder();
-        //for now we don't want to do structural or query reductions, could be options later
-        result.append(writeUnfolded());
-        result.append(" --search-strategy OverApprox --reduction 0 --query-reduction 0 --xml-queries 1");
-        for(int i = 2; i <= numQueries; i++){
-            result.append("," + i);
+    public List<String> getOptions() {
+        options.clear();
+
+        add("--write-unfolded-queries", queryOut);
+        add("--write-unfolded-net", modelOut);
+        add("--search-strategy", "OverApprox");
+        add("--reduction", "0");
+        add("--query-reduction", "0");
+        
+        String queryIndexList = "1";
+        for (int i = 2; i <= numQueries; i++){
+            queryIndexList += "," + i;
         }
 
-        if(!partition){
-            result.append(" --disable-partitioning");
-        }
-        if(!computeColorFixpoint){
-            result.append(" --disable-cfp");
-        }
-        if(!symmetricVars){
-            result.append(" --disable-symmetry-vars");
-        }
-        result.append(" --col-reduction 0 ");
-        result.append("--bindings ");
+        add("--xml-queries", queryIndexList);
 
-        return result.toString();
-    }
-
-    private String writeUnfolded() {
-        if (Platform.isWindows()) {
-            return "--write-unfolded-queries " + "\"" + queryOut + "\"" + " --write-unfolded-net " + "\"" + modelOut + "\"";
+        if (!partition){
+            add("--disable-partitioning");
         }
 
-        return "--write-unfolded-queries " + queryOut + " --write-unfolded-net " + modelOut;
-    }
+        if (!computeColorFixpoint){
+            add("--disable-cfp");
+        }
 
-    private static Map<TAPNQuery.SearchOption, String> createSearchOptionsMap() {
-        HashMap<TAPNQuery.SearchOption, String> map = new HashMap<TAPNQuery.SearchOption, String>();
-        map.put(TAPNQuery.SearchOption.BFS, " --search-strategy BFS");
-        map.put(TAPNQuery.SearchOption.DFS, " --search-strategy DFS");
-        map.put(TAPNQuery.SearchOption.RANDOM, " --search-strategy RDFS");
-        map.put(TAPNQuery.SearchOption.HEURISTIC, " --search-strategy BestFS");
-        map.put(TAPNQuery.SearchOption.OVERAPPROXIMATE, " --search-strategy OverApprox");
+        if (!symmetricVars){
+            add("--disable-symmetry-vars");
+        }
 
-        return map;
+        add("--col-reduction", "0");
+        add("--bindings");
+
+        return options;
     }
 }

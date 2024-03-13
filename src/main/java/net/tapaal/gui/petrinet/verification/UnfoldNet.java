@@ -38,7 +38,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static net.tapaal.gui.petrinet.TabTransformer.createUnfoldArgumentString;
 import static net.tapaal.gui.petrinet.TabTransformer.mapQueryToNewNames;
 
 public class UnfoldNet extends SwingWorker<String, Void> {
@@ -147,13 +146,17 @@ public class UnfoldNet extends SwingWorker<String, Void> {
             return error.toString();
         }
         VerificationOptions unfoldTACPNOptions;
-        if(lens.isTimed()){
-            unfoldTACPNOptions = new VerifyDTAPNUnfoldOptions(modelOut.getAbsolutePath(), queryOut.getAbsolutePath(), model.marking().size()*2, clonedQueries.size());
-        } else{
+        if (lens.isTimed()) {
+            unfoldTACPNOptions = new VerifyDTAPNUnfoldOptions(modelOut.getAbsolutePath(), queryOut.getAbsolutePath(), clonedQueries.size());
+        } else {
             unfoldTACPNOptions = new VerifyPNUnfoldOptions(modelOut.getAbsolutePath(), queryOut.getAbsolutePath(), clonedQueries.size(), partition, computeColorFixpoint, symmetricVars);
         }
 
-        runner = new ProcessRunner(modelChecker.getPath(), createUnfoldArgumentString(modelFile.getAbsolutePath(), queryFile.getAbsolutePath(), unfoldTACPNOptions));
+        List<String> args = unfoldTACPNOptions.getOptions();
+        args.add(modelFile.getAbsolutePath());
+        args.add(queryFile.getAbsolutePath());
+
+        runner = new ProcessRunner(modelChecker.getPath(), args.toArray(new String[0]));
         runner.run();
 
         List<String> outputLines = new ArrayList<>();

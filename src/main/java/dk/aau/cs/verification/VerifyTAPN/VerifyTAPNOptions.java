@@ -3,6 +3,7 @@ package dk.aau.cs.verification.VerifyTAPN;
 import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import net.tapaal.gui.petrinet.verification.TAPNQuery.SearchOption;
@@ -101,7 +102,7 @@ public class VerifyTAPNOptions extends VerificationOptions{
 		return dontUseDeadPlaces ? " --keep-dead-tokens " : "";
     }
 	
-	protected String rawVerificationString(String rawVerificationOptions, String traceArg) {
+	protected String[] rawVerificationString(String rawVerificationOptions, String traceArg) {
 		StringBuilder sb = new StringBuilder();
 
 		// TODO: temporary fix overriding k-bound and trace if using approximation with raw verification
@@ -128,38 +129,36 @@ public class VerifyTAPNOptions extends VerificationOptions{
 			sb.append(traceArg);
 		}
 
-		return sb.append(rawVerificationOptions).toString();
+		return sb.append(rawVerificationOptions).toString().split(" ");
 	}
 	
 	@Override
-	public String toString() {
-		StringBuilder result = new StringBuilder();
-		
+	public List<String> getOptions() {
+		options.clear();
+
 		if (useRawVerification && rawVerificationOptions != null) {
-			return rawVerificationString(rawVerificationOptions, traceMap.get(traceOption));
+			add(rawVerificationString(rawVerificationOptions, traceMap.get(traceOption)));
+			return options;
 		}
 
-        if(unfoldedModelPath != null && unfoldedQueriesPath != null)
-        {
-            result.append(" --write-unfolded-net ");
-            result.append(unfoldedModelPath);
-            result.append(" --write-unfolded-queries ");
-            result.append(unfoldedQueriesPath);
-			result.append(" --bindings ");
-        }
+		if (unfoldedModelPath != null && unfoldedQueriesPath != null) {
+			add("--write-unfolded-net", unfoldedModelPath);
+			add("--write-unfolded-queries", unfoldedQueriesPath);
+			add("--bindings");
+		}
 
-		result.append(kBoundArg());
-        result.append(deadTokenArg());
-		result.append(traceMap.get(traceOption));
-		result.append(' ');
-		result.append(searchMap.get(searchOption));
-		result.append(' ');
-		result.append(symmetry ? "" : "--disable-symmetry"); // symmetry is on by default in verifyTAPN so "-s" disables it
-		result.append(' ');
-		result.append(discreteInclusion ? " --inclusion-check 1" : "");
-		result.append(discreteInclusion ? " --inclusion-places " + generateDiscretePlacesList() : "");
+		add("--k-bound", Integer.toString(kBound()));
+		add(deadTokenArg());
+		add(traceMap.get(traceOption).split(" "));
+		add(searchMap.get(searchOption).split(" "));
+		add(symmetry ? "" : "--disable-symmetry"); // symmetry is on by default in verifyTAPN so "-s" disables it
 
-		return result.toString();
+		if (discreteInclusion) {
+			add("--inclusion-check", "1");
+			add("--inclusion-places", generateDiscretePlacesList());
+		}
+
+		return options;
 	}
 
 	private String generateDiscretePlacesList() {

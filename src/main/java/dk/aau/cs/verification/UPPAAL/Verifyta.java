@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.StringReader;
+import java.util.List;
 
 import dk.aau.cs.verification.*;
 import net.tapaal.Preferences;
@@ -173,16 +174,6 @@ public class Verifyta implements ModelChecker {
 		}
 	}
 
-	private String createArgumentString(String modelFile, String queryFile, VerificationOptions options) {
-		StringBuilder buffer = new StringBuilder(options.toString());
-		buffer.append(' ');
-		buffer.append(modelFile);
-		buffer.append(' ');
-		buffer.append(queryFile);
-
-		return buffer.toString();
-	}
-
 	public void kill() {
 		if (runner != null) {
 			runner.kill();
@@ -279,7 +270,11 @@ public class Verifyta implements ModelChecker {
     }
 
     private VerificationResult<TimedArcPetriNetTrace> verify(VerificationOptions options, TimedArcPetriNet model, ExportedModel exportedModel, TAPNQuery query) {
-		runner = new ProcessRunner(verifytapath, createArgumentString(exportedModel.modelFile(), exportedModel.queryFile(), options));
+		List<String> args = options.getOptions();
+        args.add(exportedModel.modelFile());
+        args.add(exportedModel.queryFile());
+
+        runner = new ProcessRunner(verifytapath, args.toArray(new String[0]));
 		runner.run();
 
 		if (runner.error()) {

@@ -4,15 +4,16 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.StringReader;
+import java.util.List;
 
 import com.sun.jna.Platform;
 import dk.aau.cs.debug.Logger;
 import dk.aau.cs.util.MemoryMonitor;
 
 public class ProcessRunner {
-
 	private final String file;
-	private final String arguments;
+	private final String[] options;
+
 	private long runningTime = 0;
 	private Process process;
 	private BufferedReader bufferedReaderStdout;
@@ -20,7 +21,7 @@ public class ProcessRunner {
 
 	private boolean error = false;
 
-	public ProcessRunner(String file, String arguments, ModelChecker modelChecker) {
+	public ProcessRunner(String file, String[] options, ModelChecker modelChecker) {
 		// this.setName("verification thread");
 
 		if (file == null || file.isEmpty()) {
@@ -32,11 +33,20 @@ public class ProcessRunner {
 		}
 
 		this.file = file;
-		this.arguments = arguments;
+		this.options = options;
 	}
 
-	public ProcessRunner(String file, String arguments) {
-		this(file, arguments, null);
+
+	public ProcessRunner(String file, String[] options) {
+		this(file, options, null);
+	}
+
+	public ProcessRunner(String file, String option, ModelChecker modelChecker) {
+		this(file, new String[] { option }, modelChecker);
+	}
+
+	public ProcessRunner(String file, String option) {
+		this(file, option, null);
 	}
 
 	public long getRunningTime() {
@@ -67,12 +77,19 @@ public class ProcessRunner {
 		
 		try {
 			if (Platform.isWindows()) {
-				Logger.log("Running: "+ "\"" + file + "\"" + " " + arguments);
+				Logger.log("Running: "+ "\"" + file + "\"" + " " + String.join(" ", options));
 			} else {
-				Logger.log("Running: "+ file + " " + arguments);
+				Logger.log("Running: "+ file + " " + String.join(" ", options));
 			}
 
-			process = Runtime.getRuntime().exec(getCmdArray());
+			String[] newOptions = new String[options.length + 1];
+			newOptions[0] = file;
+			for (int i = 0; i < options.length; i++) {
+				newOptions[i + 1] = options[i];
+			}
+
+			System.out.println(String.join(" ", newOptions));
+			process = Runtime.getRuntime().exec(newOptions);
 			MemoryMonitor.attach(process);
 		} catch (IOException e1) {
 			error = true;
@@ -106,15 +123,5 @@ public class ProcessRunner {
 		bufferedReaderStderr = new BufferedReader(new StringReader(stderr.getString()));
 
 		runningTime = endTimeMs - startTimeMs;
-	}
-	
-	// Return array containing executable path and arguments
-	private String[] getCmdArray(){
-		String[] argSplit = arguments.split("\\s+");		
-		String[] cmdArray = new String[1 + argSplit.length];
-		cmdArray[0] = file;
-		System.arraycopy(argSplit, 0, cmdArray, 1, argSplit.length);
-		
-		return cmdArray;
 	}
 }

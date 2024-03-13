@@ -324,12 +324,4 @@ public class TabTransformer {
         query.getProperty().accept(placeVisitor, null);
         query.getProperty().accept(transitionVisitor, null);
     }
-
-    public static String createUnfoldArgumentString(String modelFile, String queryFile, VerificationOptions options) {
-        if (Platform.isWindows()) {
-            return options.toString() + "\"" + modelFile + "\" \"" + queryFile + "\"";
-        }
-
-        return options.toString() + ' ' + modelFile + ' ' + queryFile;
-    }
 }

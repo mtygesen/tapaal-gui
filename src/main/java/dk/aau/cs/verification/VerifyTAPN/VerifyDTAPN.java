@@ -307,7 +307,17 @@ public class VerifyDTAPN implements ModelChecker{
 		if (options instanceof VerifyTAPNOptions)
 	        ((VerifyTAPNOptions) options).setTokensInModel(model.value1().getNumberOfTokensInNet()); // TODO: get rid of me
 
-        runner = new ProcessRunner(verifydtapnpath, createArgumentString(exportedModel.modelFile(), exportedModel.queryFile(), options));
+		String queryString = "";
+		if (options instanceof VerifyDTAPNOptions && (((VerifyDTAPNOptions) options).getWorkflowMode() == WorkflowMode.NOT_WORKFLOW ||
+			((VerifyDTAPNOptions) options).getWorkflowMode() == null)) {
+			queryString = exportedModel.queryFile();
+		}
+
+		List<String> args = options.getOptions();
+        args.add(exportedModel.modelFile());
+        args.add(queryString);
+
+        runner = new ProcessRunner(verifydtapnpath, args.toArray(new String[0]));
 		runner.run();
 
 		if (runner.error()) {
@@ -392,16 +402,6 @@ public class VerifyDTAPN implements ModelChecker{
 			}
 		}
 		return trace;
-	}
-
-	private String createArgumentString(String modelFile, String queryFile, VerificationOptions options) {
-		String queryString = "";
-	    if (options instanceof VerifyDTAPNOptions && (((VerifyDTAPNOptions) options).getWorkflowMode() == WorkflowMode.NOT_WORKFLOW ||
-            ((VerifyDTAPNOptions) options).getWorkflowMode() == null)) {
-			queryString = queryFile;
-		}
-
-        return createArgumentString(modelFile, queryString, options.toString());
 	}
 
     private String createArgumentString(String modelFile, String queryFile, String options) {

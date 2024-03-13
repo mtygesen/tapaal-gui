@@ -1,6 +1,7 @@
 package dk.aau.cs.verification.UPPAAL;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import net.tapaal.gui.petrinet.verification.TAPNQuery.SearchOption;
@@ -40,19 +41,19 @@ public class VerifytaOptions extends VerificationOptions {
 	}
 
 	@Override
-	public String toString() {
-		StringBuilder result = new StringBuilder();
+	public List<String> getOptions() {
+		options.clear();
 
 		if (untimedTrace) {
-			result.append("-Y ");
+			add("-Y");
 		}
 
-		result.append(traceMap.get(traceOption));
-		result.append(searchMap.get(searchOption));
+		add(traceMap.get(traceOption));
+		add(searchMap.get(searchOption));
 
-		return result.toString();
+		return options;
 	}
-
+	
 	public static Map<TraceOption, String> createTraceOptionsMap() {
 		HashMap<TraceOption, String> map = new HashMap<TraceOption, String>();
 		map.put(TraceOption.SOME, "-t0");
