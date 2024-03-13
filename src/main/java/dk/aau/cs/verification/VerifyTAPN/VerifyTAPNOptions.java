@@ -129,6 +129,8 @@ public class VerifyTAPNOptions extends VerificationOptions{
 			sb.append(traceArg);
 		}
 
+		System.out.println(sb.append(rawVerificationOptions).toString().split(" "));
+
 		return sb.append(rawVerificationOptions).toString().split(" ");
 	}
 	
