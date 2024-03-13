@@ -4778,9 +4778,6 @@ public class QueryDialog extends JPanel {
         verifytapnOptions.setTokensInModel(transformedModel.value1().getNumberOfTokensInNet());
 
         String rawVerificationOptions = verifytapnOptions.toString();
-        System.out.println("here");
-        System.out.println(rawVerificationOptions);
-        System.out.println("--------");
 
         if (verifytapnOptions.enabledOverApproximation() || verifytapnOptions.enabledUnderApproximation()) {
             if (verifytapnOptions.kBoundPresentInRawVerification() && verifytapnOptions.tracePresentInRawVerification()) {

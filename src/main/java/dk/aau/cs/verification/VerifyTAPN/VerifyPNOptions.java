@@ -193,8 +193,6 @@ public class VerifyPNOptions extends VerifyTAPNOptions{
 
         if (useRawVerification && rawVerificationOptions != null) {
             add(rawVerificationString(rawVerificationOptions, traceMap.get(traceOption)));
-            System.out.println("dudu");
-            System.out.println(String.join(" ", options));
             return options;
         }
 
