@@ -204,10 +204,10 @@ public class PlaceEditorPanel extends JPanel {
 			sharedPlacesComboBox.setSelectedItem(place.underlyingPlace());
 		}
 
-		sharedCheckBox.setEnabled(sharedPlaces.size() > 0 && !hasArcsToSharedTransitions(place.underlyingPlace()));
+		sharedCheckBox.setEnabled(sharedPlaces.size() > 0);
 		sharedCheckBox.setSelected(place.underlyingPlace().isShared());
 		
-		makeSharedButton.setEnabled(!sharedCheckBox.isSelected() && !hasArcsToSharedTransitions(place.underlyingPlace()));
+		makeSharedButton.setEnabled(!sharedCheckBox.isSelected());
 
 		nameTextField.setText(place.underlyingPlace().name());
 		nameTextField.selectAll();

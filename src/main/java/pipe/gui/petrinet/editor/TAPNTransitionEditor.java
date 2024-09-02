@@ -274,7 +274,7 @@ public class TAPNTransitionEditor extends JPanel {
 		}else{
 			switchToNameTextField();
 		}
-		makeSharedButton.setEnabled(!sharedCheckBox.isSelected() && !hasArcsToSharedPlaces(transition.underlyingTransition()));
+		makeSharedButton.setEnabled(!sharedCheckBox.isSelected());
 		attributesCheckBox.setSelected(transition.getAttributesVisible());
 	}
 	

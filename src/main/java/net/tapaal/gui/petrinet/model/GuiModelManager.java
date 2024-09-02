@@ -107,7 +107,6 @@ public class GuiModelManager {
 
         var require = new RequirementChecker<ModelViolation>();
         require.Not(tabContent.guiModelToModel.get(c).hasArcFromPlaceToTransition(p.underlyingPlace(), t.underlyingTransition()), ModelViolation.MaxOneArcBetweenPlaceAndTransition);
-        require.Not((p.underlyingPlace().isShared() && t.underlyingTransition().isShared()), ModelViolation.CantHaveArcBetweenSharedPlaceAndTransition);
 
         if (require.failed()) {
             return new Result<>(require.getErrors());
@@ -118,6 +117,7 @@ public class GuiModelManager {
         Vector<ColorExpression> vecColorExpr = new Vector<>();
         vecColorExpr.add(ct.createColorExpressionForFirstColor());
         NumberOfExpression numbExpr = new NumberOfExpression(1, vecColorExpr);
+
         TimedInputArc tia = new TimedInputArc(
             p.underlyingPlace(),
             t.underlyingTransition(),
@@ -150,7 +150,6 @@ public class GuiModelManager {
 
         var require = new RequirementChecker<ModelViolation>();
         require.Not(tabContent.guiModelToModel.get(c).hasArcFromTransitionToPlace(t.underlyingTransition(), p.underlyingPlace()), ModelViolation.MaxOneArcBetweenTransitionAndPlace);
-        require.Not((p.underlyingPlace().isShared() && t.underlyingTransition().isShared()), ModelViolation.CantHaveArcBetweenSharedPlaceAndTransition);
 
         if (require.failed()) {
             return new Result<>(require.getErrors());
@@ -194,8 +193,7 @@ public class GuiModelManager {
 
         var require = new RequirementChecker<ModelViolation>();
         require.Not(modelNet.hasArcFromPlaceToTransition(p.underlyingPlace(), t.underlyingTransition()), ModelViolation.MaxOneArcBetweenPlaceAndTransition);
-        require.Not((p.underlyingPlace().isShared() && t.underlyingTransition().isShared()), ModelViolation.CantHaveArcBetweenSharedPlaceAndTransition);
-
+    
         if (require.failed()) {
             return new Result<>(require.getErrors());
         }
@@ -240,8 +238,6 @@ public class GuiModelManager {
         var require = new RequirementChecker<ModelViolation>();
         require.Not(modelNet.hasArcFromPlaceToTransition(p1.underlyingPlace(), t.underlyingTransition()), ModelViolation.MaxOneArcBetweenPlaceAndTransition);
         require.Not(modelNet.hasArcFromTransitionToPlace(t.underlyingTransition(), p2.underlyingPlace()), ModelViolation.MaxOneArcBetweenTransitionAndPlace);
-        require.Not((p1.underlyingPlace().isShared() && t.underlyingTransition().isShared()), ModelViolation.CantHaveArcBetweenSharedPlaceAndTransition);
-        require.Not((p2.underlyingPlace().isShared() && t.underlyingTransition().isShared()), ModelViolation.CantHaveArcBetweenSharedPlaceAndTransition);
 
         if (require.failed()) {
             return new Result<>(require.getErrors());
