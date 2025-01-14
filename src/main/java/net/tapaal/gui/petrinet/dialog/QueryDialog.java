@@ -128,6 +128,8 @@ import dk.aau.cs.TCTL.TCTLTrueNode;
 import dk.aau.cs.TCTL.CTLParsing.TAPAALCTLQueryParser;
 import dk.aau.cs.TCTL.HyperLTLParsing.TAPAALHyperLTLQueryParser;
 import dk.aau.cs.TCTL.LTLParsing.TAPAALLTLQueryParser;
+import dk.aau.cs.verification.observations.Observation;
+import net.tapaal.helpers.Enabler;
 import dk.aau.cs.TCTL.Parsing.TAPAALQueryParser;
 import dk.aau.cs.TCTL.SMCParsing.TAPAALSMCQueryParser;
 import dk.aau.cs.TCTL.visitors.FixAbbrivPlaceNames;
@@ -390,6 +392,7 @@ public class QueryDialog extends JPanel {
     private boolean smcMustUpdateTime = true;
     private boolean doingBenchmark = false;
     private RunVerificationBase benchmarkThread = null;
+    private java.util.List<Observation> smcObservations;
 
     // Buttons in the bottom of the dialogue
     private JPanel buttonPanel;
@@ -987,6 +990,8 @@ public class QueryDialog extends JPanel {
         smcStepBoundValue.setEnabled(!smcStepBoundInfinite.isSelected());
         smcTimeBoundInfinite.setEnabled(!smcStepBoundInfinite.isSelected());
         smcStepBoundInfinite.setEnabled(!smcTimeBoundInfinite.isSelected());
+
+        smcObservations = settings.getObservations();
 
         smcConfidence.setText(String.valueOf(settings.confidence));
         if(!doingBenchmark) smcEstimationIntervalWidth.setText(precisionFormat.format(settings.estimationIntervalWidth));
@@ -1754,8 +1759,9 @@ public class QueryDialog extends JPanel {
 
     private void enableEditingButtons() {
         refreshUndoRedo();
-        if (currentSelection != null)
-            deleteButton.setEnabled(true);
+        if (currentSelection != null) {
+            deleteButton.setEnabled(currentSelection != null);
+        } 
     }
 
     private void returnFromManualEdit(TCTLAbstractProperty newQuery) {
@@ -3217,6 +3223,17 @@ public class QueryDialog extends JPanel {
 
             guiDialog.pack();
         });
+
+        JButton smcObservationsButton = new JButton("Edit observations");
+        smcObservationsButton.addActionListener(evt -> {
+            ObservationListDialog dialog = new ObservationListDialog(tapnNetwork, smcObservations);
+            dialog.setLocationRelativeTo(guiDialog);
+            dialog.setVisible(true);
+        });
+
+        gbc.gridx = 0;
+        gbc.gridy = 1;
+        smcSettingsPanel.add(smcObservationsButton, gbc);
 
         GridBagConstraints gridBagConstraints = new GridBagConstraints();
         gridBagConstraints.gridx = 0;
@@ -5486,16 +5503,16 @@ public class QueryDialog extends JPanel {
     }
 
     private void setVerificationOptionsEnabled(boolean isEnabled) {
-        setAllEnabled(reductionOptionsPanel, isEnabled);
+        Enabler.setAllEnabled(reductionOptionsPanel, isEnabled);
 
         if (unfoldingOptionsPanel != null) {
-            setAllEnabled(unfoldingOptionsPanel, isEnabled);
+            Enabler.setAllEnabled(unfoldingOptionsPanel, isEnabled);
         }
 
-        setAllEnabled(traceOptionsPanel, isEnabled);
-        setAllEnabled(boundednessCheckPanel, isEnabled);
-        setAllEnabled(searchOptionsPanel, isEnabled);
-        setAllEnabled(smcTracePanel, isEnabled);
+        Enabler.setAllEnabled(traceOptionsPanel, isEnabled);
+        Enabler.setAllEnabled(boundednessCheckPanel, isEnabled);
+        Enabler.setAllEnabled(searchOptionsPanel, isEnabled);
+        Enabler.setAllEnabled(smcTracePanel, isEnabled);
 
         smcVerificationTypeLabel.setEnabled(isEnabled);
         smcVerificationType.setEnabled(isEnabled);
@@ -5503,18 +5520,6 @@ public class QueryDialog extends JPanel {
         smcParallel.setEnabled(isEnabled);
 
         setEnabledOptionsAccordingToCurrentReduction();
-    }
-
-    // Enables or disables the container + all children recursively
-    private void setAllEnabled(Container container, boolean isEnabled) {
-        for (Component component : container.getComponents()) {
-            component.setEnabled(isEnabled);
-            if (component instanceof Container) {
-                setAllEnabled((Container) component, isEnabled);
-            }
-        }
-
-        container.setEnabled(isEnabled);
     }
 
     protected void setEnabledOptionsAccordingToCurrentReduction() {
