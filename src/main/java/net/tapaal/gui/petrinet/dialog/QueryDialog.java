@@ -3254,8 +3254,8 @@ public class QueryDialog extends JPanel {
         smcEstimationIntervalWidth.setToolTipText(TOOL_TIP_INTERVAL_WIDTH);
         quantitativePanel.add(smcEstimationIntervalWidth, subPanelGbc);
         subPanelGbc.gridx = 2;
-        smcPrecisionSlider = new QuerySlider(0, 0.5, 0.0001);
-        smcPrecisionSlider.setToolTipText("Value: 0.5000");
+        smcPrecisionSlider = new QuerySlider(0, 0.00001, 0.5);
+        smcPrecisionSlider.setToolTipText("Value: 0.50000");
         smcPrecisionSlider.addChangeListener(e -> {
             if (updatingSmcSettings) return;
             int value = smcPrecisionSlider.getValue();
@@ -3267,10 +3267,10 @@ public class QueryDialog extends JPanel {
             double logValue = logMin + proportion * (logMax - logMin);
             double interpretedValue = Math.exp(logValue);
             smcPrecisionSlider.setRealValue(interpretedValue);
-            double roundedValue = Math.round(interpretedValue * 10000.0) / 10000.0;
+            double roundedValue = Math.round(interpretedValue * 100000.0) / 100000.0;
             DecimalFormatSymbols decimalFormatSymbols = DecimalFormatSymbols.getInstance();
             decimalFormatSymbols.setDecimalSeparator('.');
-            DecimalFormat df = new DecimalFormat("#.####", decimalFormatSymbols);
+            DecimalFormat df = new DecimalFormat("#.#####", decimalFormatSymbols);
             String formattedValue = df.format(roundedValue);
             smcEstimationIntervalWidth.setText(formattedValue);
             smcPrecisionSlider.setToolTipText(String.format("Value: %s", formattedValue));
@@ -3400,10 +3400,28 @@ public class QueryDialog extends JPanel {
         smcComparisonFloat.addFocusListener(updater);
         qualitativePanel.add(smcComparisonFloat, subPanelGbc);
         subPanelGbc.gridx = 2;
-        smcComparisonFloatSlider = new QuerySlider(50, 0.01, 0.99, 98);
-        smcComparisonFloatSlider.setToolTipText("Value: 0.50");
+        smcComparisonFloatSlider = new QuerySlider(940, 0.00001, 0.99999, 1000);
+        smcComparisonFloatSlider.setToolTipText("Value: 0.50000");
         smcComparisonFloatSlider.addChangeListener(e -> {
-            if (!updatingSmcSettings) smcComparisonFloatSlider.updateValue(smcComparisonFloat, 2);
+            if (updatingSmcSettings) return;
+            int value = smcComparisonFloatSlider.getValue();
+            double desiredMin = smcComparisonFloatSlider.getDesiredMin();
+            double desiredMax = smcComparisonFloatSlider.getDesiredMax();
+            double logMin = Math.log(desiredMin);
+            double logMax = Math.log(desiredMax);
+            double proportion = (double) value / smcComparisonFloatSlider.getMaximum();
+            double logValue = logMin + proportion * (logMax - logMin);
+            double interpretedValue = Math.exp(logValue);
+            double roundedValue = Math.round(interpretedValue * 100000.0) / 100000.0;
+            smcComparisonFloatSlider.setRealValue(roundedValue);
+            
+            DecimalFormatSymbols decimalFormatSymbols = DecimalFormatSymbols.getInstance();
+            decimalFormatSymbols.setDecimalSeparator('.');
+            DecimalFormat df = new DecimalFormat("#.#####", decimalFormatSymbols);
+            String formattedValue = df.format(roundedValue);
+            
+            smcComparisonFloat.setText(formattedValue);
+            smcComparisonFloatSlider.setToolTipText(String.format("Value: %s", formattedValue));
         });
         qualitativePanel.add(smcComparisonFloatSlider, subPanelGbc);
 
