@@ -39,7 +39,7 @@ class GuardExpressionTest {
     }
 
     @Test
-    void comparisonAllowsVariablesWithDifferentTypes() {
+    void comparisonRejectsVariablesWithDifferentTypes() {
         var firstType = colorType("A", "a");
         var secondType = colorType("B", "b");
         var guard = new EqualityExpression(
@@ -47,25 +47,28 @@ class GuardExpressionTest {
             new VariableExpression(new Variable("y", secondType))
         );
 
-        assertDoesNotThrow(guard::validateAndInferColorType);
-        assertEquals(firstType, guard.getColorType());
+        assertThrows(IllegalArgumentException.class, guard::validateAndInferColorType);
         assertEquals(firstType, guard.getLeftExpression().getColorType());
         assertEquals(secondType, guard.getRightExpression().getColorType());
     }
 
     @Test
-    void parserAllowsAllComparisonsAcrossDifferentTypes() {
+    void parserRejectsAllComparisonsAcrossDifferentTypes() {
         var network = new TimedArcPetriNetNetwork();
         var firstType = colorType("A", "1");
-        var secondType = colorType("B", "1", "2");
+        var secondType = colorType("B", "1");
         network.add(firstType);
         network.add(secondType);
         network.add(new Variable("x", firstType));
         network.add(new Variable("y", secondType));
 
         for (var operator : new String[]{"<", "<=", "=", "!=", ">=", ">"}) {
-            assertDoesNotThrow(() -> GuardExpressionParser.parse("x++" + operator + "y++", network));
+            assertThrows(dk.aau.cs.model.CPN.GuardExpressionParser.ParseException.class,
+                () -> GuardExpressionParser.parse("x++" + operator + "y++", network));
+            assertDoesNotThrow(() -> GuardExpressionParser.parse("x" + operator + "x", network));
         }
+        assertDoesNotThrow(() -> GuardExpressionParser.parse("(x=1) and (y=1)", network));
+        assertDoesNotThrow(() -> GuardExpressionParser.parse("(x=1) or (y=1)", network));
     }
 
     @Test
@@ -115,7 +118,7 @@ class GuardExpressionTest {
     }
 
     @Test
-    void enumerationOperandsKeepTheirDeclaredTypes() throws Exception {
+    void enumerationOperandsRequireMatchingTypes() throws Exception {
         var network = new TimedArcPetriNetNetwork();
         var firstType = colorType("E", "a0", "a1");
         var secondType = colorType("F", "b0", "b1");
@@ -124,10 +127,10 @@ class GuardExpressionTest {
         network.add(new Variable("e", firstType));
         network.add(new Variable("f", secondType));
 
-        assertDoesNotThrow(() -> GuardExpressionParser.parse("e=f", network));
-        var guard = (EqualityExpression)GuardExpressionParser.parse("e=b0", network);
-        assertEquals(firstType, guard.getLeftExpression().getColorType());
-        assertEquals(secondType, guard.getRightExpression().getColorType());
+        assertThrows(dk.aau.cs.model.CPN.GuardExpressionParser.ParseException.class,
+            () -> GuardExpressionParser.parse("e=f", network));
+        assertThrows(dk.aau.cs.model.CPN.GuardExpressionParser.ParseException.class,
+            () -> GuardExpressionParser.parse("e=b0", network));
     }
 
     @Test

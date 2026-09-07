@@ -423,9 +423,9 @@ internal class TapnXmlLoaderTest {
 
     class ColoredGuard {
         @Test
-        fun `comparisons allow different color types`() {
+        fun `comparisons reject different color types`() {
             for (operator in listOf("lessthan", "lessthanorequal", "equality", "inequality", "greaterthanorequal", "greaterthan")) {
-                Assertions.assertDoesNotThrow {
+                Assertions.assertThrows(Exception::class.java) {
                     TapnXmlLoader().load(coloredGuardNet(comparison(operator, variable("x"), variable("y"))).asInpurtStream())
                 }
             }
@@ -433,14 +433,14 @@ internal class TapnXmlLoaderTest {
 
         @Test
         fun `mixed guard types survive save and load`() {
-            val mixedIntegers = comparison("equality", successor(variable("x")), successor(variable("y")))
-            val mixedEnums = comparison("equality", variable("e"), enumConstant("b0"))
-            val integerConstant = comparison("equality", variable("x"), integerConstant(1, 0, 2))
+            val mixedIntegers = comparison("equality", successor(variable("x")), successor(variable("x")))
+            val mixedEnums = comparison("equality", variable("e"), enumConstant("a0"))
+            val integerConstant = comparison("equality", variable("y"), integerConstant(11, 10, 12))
             val guardXml = "<and><subterm>$mixedIntegers</subterm><subterm><and><subterm>$mixedEnums</subterm><subterm>$integerConstant</subterm></and></subterm></and>"
             val loaded = TapnXmlLoader().load(coloredGuardNet(guardXml).asInpurtStream())
             val guard = loaded.network().allTemplates().first().getTransitionByName("t").guard
 
-            assertGuardOperandTypes(guard, "A", "B", "E", "F", "A", "A")
+            assertGuardOperandTypes(guard, "A", "A", "E", "E", "B", "B")
 
             val saved = TimedArcPetriNetNetworkWriter(
                 loaded.network(), loaded.templates(), loaded.queries(), loaded.network().constants(), loaded.getLens()
@@ -449,12 +449,12 @@ internal class TapnXmlLoaderTest {
             val reloadedGuard = reloaded.network().allTemplates().first().getTransitionByName("t").guard
 
             Assertions.assertEquals(guard.toString(), reloadedGuard.toString())
-            assertGuardOperandTypes(reloadedGuard, "A", "B", "E", "F", "A", "A")
+            assertGuardOperandTypes(reloadedGuard, "A", "A", "E", "E", "B", "B")
         }
 
         @Test
         fun `every comparison must contain a variable`() {
-            val valid = comparison("equality", variable("x"), variable("y"))
+            val valid = comparison("equality", variable("x"), variable("x"))
             val constants = comparison("equality", enumConstant("a0"), enumConstant("b0"))
             val guard = "<and><subterm>$valid</subterm><subterm>$constants</subterm></and>"
 

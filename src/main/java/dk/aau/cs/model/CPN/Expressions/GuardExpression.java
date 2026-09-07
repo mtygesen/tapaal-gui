@@ -60,6 +60,10 @@ public abstract class GuardExpression extends Expression {
                 throw new IllegalArgumentException(left + " is not comparable to " + right);
             }
 
+            if (!comparison.getLeftExpression().getColorType().equals(comparison.getRightExpression().getColorType())) {
+                throw new IllegalArgumentException("Both operands of each comparison must have the same color type.");
+            }
+
             var inferredColorType = leftVariables.isEmpty() ? right.getColorType() : left.getColorType();
             expression.setColorType(inferredColorType);
             return inferredColorType;
