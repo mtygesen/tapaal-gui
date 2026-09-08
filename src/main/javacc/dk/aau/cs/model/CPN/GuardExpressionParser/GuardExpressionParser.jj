@@ -20,11 +20,10 @@ PARSER_BEGIN(GuardExpressionParser)
 package dk.aau.cs.model.CPN.GuardExpressionParser;
 
 import java.io.StringReader;
-import java.util.ArrayList;
 import java.util.Vector;
-import dk.aau.cs.model.CPN.ColorType;
 import dk.aau.cs.model.CPN.Expressions.*;
-import dk.aau.cs.model.CPN.ProductType;import dk.aau.cs.model.tapn.TimedArcPetriNetNetwork;
+import dk.aau.cs.model.CPN.ProductType;
+import dk.aau.cs.model.tapn.TimedArcPetriNetNetwork;
 import dk.aau.cs.model.CPN.Color;
 
 
@@ -35,13 +34,13 @@ public class GuardExpressionParser {
 	public static GuardExpression parse(String expression, TimedArcPetriNetNetwork inputNetwork) throws ParseException {
 	    network = inputNetwork;
 		GuardExpressionParser parser = new GuardExpressionParser(new StringReader(expression));
-		var guard = parser.StartOrExpr();
 		try {
+			var guard = parser.StartOrExpr();
 			guard.validateAndInferColorType();
-		} catch (IllegalArgumentException exception) {
+			return guard;
+		} catch (IllegalArgumentException | TokenMgrError exception) {
 			throw new ParseException(exception.getMessage());
 		}
-		return guard;
 	}
 }
 
@@ -171,54 +170,16 @@ GuardExpression parseOperatorExpression() :
 	Token op;
 }
 {
-    left = ColorExpression() op = <OP> right = ColorExpression()
+    left = Element() op = <OP> right = Element()
 	{
        if(op.image.equals("<")) return new LessThanExpression(left,right);
        else if(op.image.equals("<=")) return new LessThanEqExpression(left,right);
        else if(op.image.equals(">")) return new GreaterThanExpression(left,right);
        else if(op.image.equals(">=")) return new GreaterThanEqExpression(left,right);
-       else if(op.image.equals("=")) return new EqualityExpression(left,right);
+       else if(op.image.equals("=") || op.image.equals("==")) return new EqualityExpression(left,right);
        else if(op.image.equals("!=")) return new InequalityExpression(left,right);
        else return null;
 	}
-}
-
-ColorExpression ColorExpression() : {
-    ColorExpression subexpression;
-
-    Vector<ColorExpression> expressions = new Vector<ColorExpression>();
-    ArrayList<String> succPreds= new ArrayList<String>();
-
-}
-{
-
-    "(" subexpression = Element() {expressions.add(subexpression);} ("," subexpression = Element() {expressions.add(subexpression);})+ ")" ("++"{succPreds.add("++");} | "--" {succPreds.add("--");})*
-    {
-      ColorExpression cexpr = new TupleExpression(expressions);
-      //assumes single level producttypes
-      boolean colorTypeExists = false;
-      for(ColorType ct: network.colorTypes()){
-          if(ct instanceof ProductType){
-              if(((ProductType)ct).containsTypes(cexpr.getColorTypes())){
-                colorTypeExists = true;
-                break;
-              }
-          }
-      }
-      if(!colorTypeExists){
-          throw new ParseException("We could not find an existing colortype for the color " + cexpr.toString());
-      }
-      for(String s : succPreds){
-           if(s.equals("++")){
-               cexpr = new SuccessorExpression(cexpr);
-           } else{
-               cexpr = new PredecessorExpression(cexpr);
-           }
-      }
-
-      return cexpr;
-    }
-    | subexpression = Element(){return subexpression;}
 }
 
 ColorExpression Element() : {
@@ -234,8 +195,13 @@ ColorExpression Element() : {
             cexpr = new UserOperatorExpression(c);
         } else if(network.getVariableByName(name.toString()) != null){
             cexpr = new VariableExpression(network.getVariableByName(name.toString()));
-        } else{
-            throw new ParseException("Could not parse " + name + " as the name could not be found");
+        } else {
+            throw new ParseException("Unknown color or variable '" + name.image + "' at line "
+                + name.beginLine + ", column " + name.beginColumn + ".");
+        }
+        if (cexpr.getColorType() instanceof ProductType) {
+            throw new ParseException("Product color type '" + cexpr.getColorType().getName()
+                + "' is not allowed in guards at line " + name.beginLine + ", column " + name.beginColumn + ".");
         }
         for(String s : succPreds){
             if(s.equals("++")){
