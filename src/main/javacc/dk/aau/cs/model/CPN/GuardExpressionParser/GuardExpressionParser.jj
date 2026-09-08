@@ -38,7 +38,17 @@ public class GuardExpressionParser {
 			var guard = parser.StartOrExpr();
 			guard.validateAndInferColorType();
 			return guard;
-		} catch (IllegalArgumentException | TokenMgrError exception) {
+		} catch (ParseException exception) {
+			if (exception.getMessage() != null && (exception.getMessage().contains("\",\"") || exception.getMessage().contains("<COMMA>"))) {
+				throw new ParseException("Product colors not supported in guard expression.");
+			}
+			throw exception;
+		} catch (TokenMgrError exception) {
+			if (exception.getMessage() != null && exception.getMessage().contains("\",\"")) {
+				throw new ParseException("Product colors not supported in guard expression.");
+			}
+			throw new ParseException(exception.getMessage());
+		} catch (IllegalArgumentException exception) {
 			throw new ParseException(exception.getMessage());
 		}
 	}
@@ -78,6 +88,8 @@ TOKEN :
 TOKEN :
 {
 	<OP: "<" | "<=" | ">" | "=" | "==" | ">=" | ">" | "!=" >
+	|
+	<COMMA: ",">
 }
 
 SKIP :
@@ -153,6 +165,8 @@ GuardExpression term() : {
             }
             return childExpression; 
         }
+    | LOOKAHEAD(Tuple())
+        Tuple() { return null; }
     | "(" childExpression = OrExpr() ")" { 
         if (childExpression instanceof AndExpression) {
             ((AndExpression) childExpression).setSimpleProperty(false); 
@@ -170,7 +184,7 @@ GuardExpression parseOperatorExpression() :
 	Token op;
 }
 {
-    left = Element() op = <OP> right = Element()
+    left = ColorExpression() op = <OP> right = ColorExpression()
 	{
        if(op.image.equals("<")) return new LessThanExpression(left,right);
        else if(op.image.equals("<=")) return new LessThanEqExpression(left,right);
@@ -180,6 +194,31 @@ GuardExpression parseOperatorExpression() :
        else if(op.image.equals("!=")) return new InequalityExpression(left,right);
        else return null;
 	}
+}
+
+ColorExpression ColorExpression() : {
+    ColorExpression subexpression;
+}{
+    LOOKAHEAD(Tuple())
+    Tuple()
+    | subexpression = Element() { return subexpression; }
+}
+
+ColorExpression Tuple() : {
+    Token open;
+}{
+    open = "(" TupleElement() ( "," TupleElement() )+ ")" ( "++" | "--" )*
+    {
+        throw new ParseException("Product colors not supported in guard expression at line "
+            + open.beginLine + ", column " + open.beginColumn + ".");
+    }
+}
+
+void TupleElement() : {}
+{
+    LOOKAHEAD(Tuple())
+    Tuple()
+    | ( <IDENT> [ ".all" ] | <NUM> ) ( "++" | "--" )*
 }
 
 ColorExpression Element() : {
@@ -201,7 +240,7 @@ ColorExpression Element() : {
         }
         if (cexpr.getColorType() instanceof ProductType) {
             throw new ParseException("Product color type '" + cexpr.getColorType().getName()
-                + "' is not allowed in guards at line " + name.beginLine + ", column " + name.beginColumn + ".");
+                + "' is not supported in guard expression at line " + name.beginLine + ", column " + name.beginColumn + ".");
         }
         for(String s : succPreds){
             if(s.equals("++")){
