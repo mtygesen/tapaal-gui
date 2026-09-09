@@ -83,6 +83,7 @@ public class Animator {
 
     private InteractiveHandle interactiveEngine;
     private boolean isUsingInteractiveEngine;
+    private boolean integerDelaysOnly;
     private Map<TimedTransition, List<Map<Variable, Color>>> validBindingsMap;
     private Map<TimedTransition, List<Map<Variable, Color>>> delayEnabledBindingsMap;
 
@@ -96,6 +97,9 @@ public class Animator {
 
     public void initializeInteractiveEngine() {
         if (!tab.getLens().isColored()) return;
+
+        integerDelaysOnly = tab.getLens().isTimed();
+        tab.getAnimationController().setIntegerDelayInput(integerDelaysOnly);
 
         try {
             TAPNComposer composer = new TAPNComposer(new MessengerImpl(), tab.getGuiModels(), tab.getLens(), false, true);
@@ -332,6 +336,9 @@ public class Animator {
         for (var template : tab.activeTemplates()) {
             for (var transition : template.model().transitions()) {
                 boolean isEnabled = isColoredTransitionEnabled(transition);
+                if (transition.isUrgent() && isEnabled) {
+                    isUrgentTransitionEnabled = true;
+                }
                 boolean isDelayEnabled = !isEnabled && TAPAALGUI.getAppGui().isShowingDelayEnabledTransitions() && isColoredTransitionDelayEnabled(transition);
                 if (isEnabled || isDelayEnabled) {
                     var guiTransition = template.guiModel().getTransitionByName(transition.name());
@@ -938,6 +945,15 @@ public class Animator {
 
     public boolean letTimePass(BigDecimal delay) {
 
+        if (integerDelaysOnly && delay.stripTrailingZeros().scale() > 0) {
+            return false;
+        }
+
+        if (delay.compareTo(BigDecimal.ZERO) != 0
+            && (isUrgentTransitionEnabled || !currentMarking().isDelayPossible(delay))) {
+            return false;
+        }
+
         if(!clearStepsForward()){
             return false;
         }
@@ -949,7 +965,7 @@ public class Animator {
             addMarking(new TAPNNetworkTimeDelayStep(delay), delayedMarking);
             updateColoredMarking();
             result = true;
-        } else if (delay.compareTo(new BigDecimal(0))==0 || (currentMarking().isDelayPossible(delay) && !isUrgentTransitionEnabled)) {
+        } else {
             NetworkMarking delayedMarking = currentMarking().delay(delay);
             addMarking(new TAPNNetworkTimeDelayStep(delay), delayedMarking);
             result = true;

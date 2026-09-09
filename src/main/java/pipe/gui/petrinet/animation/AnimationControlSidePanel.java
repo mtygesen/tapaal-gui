@@ -52,6 +52,7 @@ public class AnimationControlSidePanel extends JPanel {
     JPanel firemode;
     private JComboBox traceBox;
     private JToolBar animationToolBar;
+	private boolean integerDelayInput;
 
     public final JTextField TimeDelayField = new JTextField();
 	final JComboBox<String> firermodebox;
@@ -211,7 +212,10 @@ public class AnimationControlSidePanel extends JPanel {
 		delaySlider.setPaintLabels(true);
 		delaySlider.setPaintTicks(true);
 		delaySlider.addChangeListener(e -> {
-			TimeDelayField.setText(Double.toString(delaySlider.getValue() * ((double) delayScale) / 160));
+			double delay = delaySlider.getValue() * ((double) delayScale) / 160;
+			TimeDelayField.setText(integerDelayInput
+				? Integer.toString(delaySlider.getValue() * delayScale / 160)
+				: Double.toString(delay));
 			animator.reportBlockingPlaces();
 
 		});
@@ -427,7 +431,18 @@ public class AnimationControlSidePanel extends JPanel {
 
 	private void initializeDocumentFilterForDelayInput() {
 		javax.swing.text.Document doc = TimeDelayField.getDocument();
-		((AbstractDocument)doc).setDocumentFilter(new DecimalOnlyDocumentFilter(5));
+		((AbstractDocument)doc).setDocumentFilter(new DecimalOnlyDocumentFilter(Constants.AGE_DECIMAL_PRECISION));
+	}
+
+	public void setIntegerDelayInput(boolean integerDelayInput) {
+		this.integerDelayInput = integerDelayInput;
+		((AbstractDocument)TimeDelayField.getDocument()).setDocumentFilter(
+			new DecimalOnlyDocumentFilter(integerDelayInput ? 0 : Constants.AGE_DECIMAL_PRECISION)
+		);
+        
+		if (integerDelayInput) {
+			TimeDelayField.setText("1");
+		}
 	}
 
 

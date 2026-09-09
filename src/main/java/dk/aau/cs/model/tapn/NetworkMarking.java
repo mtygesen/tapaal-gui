@@ -74,7 +74,7 @@ public class NetworkMarking implements TimedMarking {
 		for(Entry<TimedPlace, List<TimedToken>> entry: sharedPlacesTokens.entrySet()){
 			if(TAPAALGUI.getCurrentTab().network().isSharedPlaceUsedInTemplates((SharedPlace)entry.getKey())){
 				for(TimedToken token : entry.getValue()){
-					TimeInvariant invariant = token.place().invariant();
+					TimeInvariant invariant = token.place().invariantFor(token.color());
 					if (!invariant.isSatisfied(token.age().add(delay))) {
 						return false;
 					}
@@ -97,7 +97,7 @@ public class NetworkMarking implements TimedMarking {
 		for(Entry<TimedPlace, List<TimedToken>> entry: sharedPlacesTokens.entrySet()){
 			if(TAPAALGUI.getCurrentTab().network().isSharedPlaceUsedInTemplates((SharedPlace)entry.getKey())){
 				for(TimedToken token : entry.getValue()){
-					TimeInvariant invariant = token.place().invariant();
+					TimeInvariant invariant = token.place().invariantFor(token.color());
 					if (!invariant.isSatisfied(token.age().add(delay))) {
 						if(!result.contains(token.place())){
 							result.add(token.place());
