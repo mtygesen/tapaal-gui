@@ -141,6 +141,6 @@ public class TAPNTraceDecomposer {
             }
         }
 
-        return new TAPNNetworkColoredTransitionStep(transition, step.bindings(), networkMarking);
+        return new TAPNNetworkColoredTransitionStep(transition, step.bindings(), step.getPostMarking() == null ? null : networkMarking);
     }
 }

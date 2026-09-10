@@ -108,7 +108,7 @@ public class TAPNQueryLoader extends QueryLoader{
 		boolean colorFixpoint = getUnfoldingOption(queryElement, "colorFixpoint", true);
         boolean symmetricVars = getUnfoldingOption(queryElement, "symmetricVars", true);
         boolean useExplicitSearch = getUnfoldingOption(queryElement, "useExplicitSearch", false);
-        boolean traceInOriginalNet = getUnfoldingOption(queryElement, "traceInOriginalNet", false);
+        boolean traceInOriginalNet = getUnfoldingOption(queryElement, "traceInOriginalNet", true);
         boolean parallel = getReductionOption(queryElement, "parallel", true);
         VerificationType verificationType = VerificationType.fromString(queryElement.getAttribute("verificationType"));
 

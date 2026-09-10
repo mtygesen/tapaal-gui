@@ -80,6 +80,11 @@ public class AnimationControlSidePanel extends JPanel {
 		animationToolBar.setVisible(true);
 
         traceBox = new JComboBox<>(new DefaultComboBoxModel<>());
+        traceBox.addItemListener(event -> {
+            if (traceBox.getSelectedItem() != null && event.getStateChange() == ItemEvent.SELECTED) {
+                animator.setTrace(animator.getTraceMap().get(traceBox.getSelectedItem().toString()));
+            }
+        });
         traceBox.setPreferredSize(new Dimension(100, 27));
         traceBox.setToolTipText(TRACEBOX_DROPDOWN_TOOL_TIP);
         showTraceBox(false);
@@ -129,12 +134,6 @@ public class AnimationControlSidePanel extends JPanel {
         }
 
         traceBox.setModel(new DefaultComboBoxModel<>(tracesVector));
-
-        traceBox.addItemListener(event -> {
-            if (traceBox.getSelectedItem() != null && event.getStateChange() == ItemEvent.SELECTED) {
-                animator.changeTrace(animator.getTraceMap().get(traceBox.getSelectedItem().toString()));
-            }
-        });
 
         showTraceBox(true);
 

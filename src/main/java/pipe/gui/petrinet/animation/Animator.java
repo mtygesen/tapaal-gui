@@ -142,20 +142,15 @@ public class Animator {
         return this.traceMap;
     }
 
-    public void changeTrace(TAPNNetworkTrace trace) {
-        resetForTraceChange();
-        setTrace(trace);
-    }
-
     public void setTrace(TAPNNetworkTrace trace) {
         tab.setAnimationMode(true, tab.getLens().isColored());
 
         try {
+            resetForTraceChange();
             if (trace.isConcreteTrace()) {
                 this.trace = trace;
                 if (trace.isColoredTrace()) {
                     setColoredTrace(trace);
-                    updateFireableTransitions();
                     if (trace instanceof ColoredTAPNNetworkTrace coloredTrace && coloredTrace.getTraceType() != TraceType.NOT_EG) {
                         tab.getAnimationHistorySidePanel().setLastShown(coloredTrace.getTraceType());
                     }
@@ -230,27 +225,46 @@ public class Animator {
     }
 
     private void setColoredTrace(TAPNNetworkTrace trace) {
+        List<String> historyItems = new ArrayList<>();
+        boolean engineMarkingCurrent = false;
         for (var step : trace) {
+            NetworkMarking marking;
             if (step instanceof TAPNNetworkColoredTransitionStep) {
                 var coloredStep = (TAPNNetworkColoredTransitionStep)step;
-                NetworkMarking marking = null;
-                if (isUsingInteractiveEngine) {
+                marking = coloredStep.getMarking();
+                if (marking == null && isUsingInteractiveEngine) {
+                    if (!engineMarkingCurrent) {
+                        tab.network().setMarking(currentMarking());
+                        updateColoredMarking();
+                        interactiveEngine.sendMarking(currentMarking());
+                    }
+                    
                     marking = interactiveEngine.sendTransition(coloredStep.getTransition(), coloredStep.getBindings());
+                    engineMarkingCurrent = marking != null;
+                    coloredStep.setMarking(marking);
+                } else {
+                    engineMarkingCurrent = false;
                 }
-
-                if (marking == null) {
-                    marking = coloredStep.getMarking();
-                }
-
-                addMarking(step, marking != null ? marking : currentMarking());
             } else if (step instanceof TAPNNetworkTimeDelayStep) {
                 var delayStep = (TAPNNetworkTimeDelayStep)step;
-                if (isUsingInteractiveEngine && tab.getLens().isTimed()) {
-                    interactiveEngine.sendDelay(delayStep.getDelay());
-                }
+                marking = currentMarking().delay(delayStep.getDelay());
+                engineMarkingCurrent = false;
+            } else {
+                continue;
+            }
 
-                var marking = currentMarking().delay(delayStep.getDelay());
-                addMarking(step, marking != null ? marking : currentMarking());
+            historyItems.add(step.toString());
+            actionHistory.add(step);
+            markings.add(marking != null ? marking : currentMarking());
+            currentAction++;
+            currentMarkingIndex++;
+        }
+
+        var history = tab.getAnimationHistorySidePanel();
+        history.getListModel().addAll(historyItems);
+        for (int i = 0; i < actionHistory.size(); ++i) {
+            if (actionHistory.get(i) instanceof TAPNNetworkColoredTransitionStep step) {
+                history.setTooltipForIndex(i + 1, ColorBindingParser.createTooltip(step.getBindings()));
             }
         }
 
@@ -1200,6 +1214,7 @@ public class Animator {
         resethistory();
         removeSetTrace(false);
         markings.add(initialMarking);
+        tab.network().setMarking(initialMarking);
     }
 
     public void reset(boolean keepInitial){

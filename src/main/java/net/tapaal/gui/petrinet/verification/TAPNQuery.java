@@ -87,7 +87,7 @@ public class TAPNQuery {
     private boolean useTarOption = false;
     private boolean useTarjan = false;
     private boolean useExplicitSearch = false;
-    private boolean traceInOriginalNet = false;
+    private boolean traceInOriginalNet = true;
 	private boolean useRawVerification = false;
 	private String rawVerificationPrompt;
 
