@@ -11,8 +11,26 @@ import dk.aau.cs.verification.VerifyTAPN.TraceType;
 public class ColoredTAPNNetworkTrace implements TAPNNetworkTrace {
     private final List<TAPNNetworkTraceStep> steps = new ArrayList<TAPNNetworkTraceStep>();
     private TraceType traceType = TraceType.NOT_EG;
+    private final int loopToIndex;
+
+    public ColoredTAPNNetworkTrace() {
+        this(-1);
+    }
+
+    public ColoredTAPNNetworkTrace(int loopToIndex) {
+        this.loopToIndex = loopToIndex;
+    }
+
+    public int getLoopToIndex() {
+        return loopToIndex;
+    }
+
+    public List<TAPNNetworkTraceStep> getLoopSteps() {
+        return steps.subList(loopToIndex, steps.size());
+    }
 
     public void add(TAPNNetworkTraceStep step) {
+		if (steps.size() == loopToIndex) step.setLoopStep();
 		steps.add(step);
 	}
 

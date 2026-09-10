@@ -225,6 +225,12 @@ public class Animator {
     }
 
     private void setColoredTrace(TAPNNetworkTrace trace) {
+        addToColoredTrace(trace);
+        updateBindings(0);
+    }
+
+    private void addToColoredTrace(Iterable<TAPNNetworkTraceStep> steps) {
+        int firstAction = actionHistory.size();
         List<String> historyItems = new ArrayList<>();
         boolean engineMarkingCurrent = false;
         for (var step : trace) {
@@ -261,14 +267,12 @@ public class Animator {
         }
 
         var history = tab.getAnimationHistorySidePanel();
-        history.getListModel().addAll(historyItems);
-        for (int i = 0; i < actionHistory.size(); ++i) {
+        history.getListModel().addAll(firstAction + 1, historyItems);
+        for (int i = firstAction; i < actionHistory.size(); ++i) {
             if (actionHistory.get(i) instanceof TAPNNetworkColoredTransitionStep step) {
                 history.setTooltipForIndex(i + 1, ColorBindingParser.createTooltip(step.getBindings()));
             }
         }
-
-        updateBindings(0);
     }
 
     /**
@@ -591,6 +595,14 @@ public class Animator {
 
                 if (timedTrace.getLoopToIndex() != -1) {
                     addToTimedTrace(timedTrace.getLoopSteps());
+                }
+            } else if (trace instanceof ColoredTAPNNetworkTrace coloredTrace) {
+                if (coloredTrace.getTraceType() == TraceType.EG_DELAY_FOREVER) {
+                    addMarking(new TAPNNetworkTimeDelayStep(BigDecimal.ONE), currentMarking().delay(BigDecimal.ONE));
+                }
+
+                if (coloredTrace.getLoopToIndex() != -1) {
+                    addToColoredTrace(coloredTrace.getLoopSteps());
                 }
             }
 
