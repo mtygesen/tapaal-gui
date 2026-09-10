@@ -41,19 +41,7 @@ public class AnimationHistorySidePanel extends JPanel {
                     var clicked = animBox.locationToIndex(e.getPoint());
 
                     if (clicked != -1) {
-                        var current = animator.getCurrentMarkingIndex();
-                        var steps = clicked - current;
-
-                        if (steps < 0) {
-                            for (int i = 0; i < Math.abs(steps); ++i) {
-                                animator.stepBack();
-                            }
-                        } else if (steps > 0) {
-                            for (int i = 0; i < steps; ++i) {
-                                animator.stepForward();
-                            }
-                        }
-
+                        animator.seekToMarking(clicked);
                         animator.blinkSelected(animBox.getSelectedValue());
                     }
                 }

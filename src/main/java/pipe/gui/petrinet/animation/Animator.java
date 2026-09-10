@@ -509,6 +509,51 @@ public class Animator {
         return currentMarkingIndex;
     }
 
+    public void seekToMarking(int index) {
+        if (index < 0 || index >= tab.getAnimationHistorySidePanel().getListModel().size()) return;
+
+        int target = Math.min(index, markings.size() - 1);
+        if (target < 0) return;
+        if (target != currentMarkingIndex) {
+            if (isDisplayingUntimedTrace) {
+                seekSuggestedTrace(target);
+            }
+
+            currentMarkingIndex = target;
+            currentAction = target - 1;
+            tab.getAnimationHistorySidePanel().setSelectedIndex(target);
+            restoreCurrentMarking();
+        }
+
+        if (index > target) stepForward();
+    }
+
+    private void seekSuggestedTrace(int target) {
+        var history = tab.getUntimedAnimationHistory();
+        int position = history.getSelectedIndex();
+
+        for (int action = currentMarkingIndex; action < target; ++action) {
+            if (matchesSuggestedTransition(action, position + 1)) {
+                ++position;
+            }
+        }
+
+        for (int action = currentMarkingIndex - 1; action >= target; --action) {
+            if (matchesSuggestedTransition(action, position)) {
+                --position;
+            }
+        }
+
+        history.setSelectedIndex(position);
+    }
+
+    private boolean matchesSuggestedTransition(int action, int position) {
+        var history = tab.getUntimedAnimationHistory();
+        return position > 0 && position < history.getListModel().size()
+            && actionHistory.get(action) instanceof TAPNNetworkTimedTransitionStep
+            && history.getElement(position).equals(actionHistory.get(action).toString());
+    }
+
     public void stepBack() {
         tab.getAnimationHistorySidePanel().stepBackwards();
         if (!actionHistory.isEmpty() && currentAction >= 0 && currentMarkingIndex > 0) {
@@ -523,19 +568,7 @@ public class Animator {
 
             currentAction--;
             currentMarkingIndex--;
-            updateBindings(currentAction + 1);
-            if (currentMarkingIndex >= 0 && currentMarkingIndex < markings.size()) {
-                tab.network().setMarking(markings.get(currentMarkingIndex));
-            }
-
-            updateColoredMarking();
-            refreshAnimation();
-            if (activeGuiModel() != null) {
-                activeGuiModel().redrawVisibleTokenLists();
-            }
-
-            updateMouseOverInformation();
-            reportBlockingPlaces();
+            restoreCurrentMarking();
         }
     }
 
@@ -578,20 +611,24 @@ public class Animator {
 
             currentAction++;
             currentMarkingIndex++;
-            updateBindings(currentAction + 1);
-            if (currentMarkingIndex >= 0 && currentMarkingIndex < markings.size()) {
-                tab.network().setMarking(markings.get(currentMarkingIndex));
-            }
+            restoreCurrentMarking();
+        }
+    }
 
-            updateColoredMarking();
-            refreshAnimation();
-            if (activeGuiModel() != null) {
-                activeGuiModel().redrawVisibleTokenLists();
-            }
+    private void restoreCurrentMarking() {
+        updateBindings(currentAction + 1);
+        if (currentMarkingIndex >= 0 && currentMarkingIndex < markings.size()) {
+            tab.network().setMarking(markings.get(currentMarkingIndex));
+        }
 
-            updateMouseOverInformation();
-            reportBlockingPlaces();
-        }        
+        updateColoredMarking();
+        refreshAnimation();
+        if (activeGuiModel() != null) {
+            activeGuiModel().redrawVisibleTokenLists();
+        }
+
+        updateMouseOverInformation();
+        reportBlockingPlaces();
     }
 
     private void updateColoredMarking() {
