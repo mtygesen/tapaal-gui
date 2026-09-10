@@ -6617,8 +6617,8 @@ public class QueryDialog extends JPanel {
                 break;
             case 2:
                 useTarjan.setVisible(true);
-                useTarjan.setEnabled(true);
-                useTarjan.setSelected(true);
+                useTarjan.setEnabled(false);
+                useTarjan.setSelected(false);
                 break;
             case 3:
                 useTarjan.setVisible(true);
