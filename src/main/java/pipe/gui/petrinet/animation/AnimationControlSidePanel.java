@@ -82,7 +82,7 @@ public class AnimationControlSidePanel extends JPanel {
         traceBox = new JComboBox<>(new DefaultComboBoxModel<>());
         traceBox.addItemListener(event -> {
             if (traceBox.getSelectedItem() != null && event.getStateChange() == ItemEvent.SELECTED) {
-                animator.setTrace(animator.getTraceMap().get(traceBox.getSelectedItem().toString()));
+                animator.switchTrace(animator.getTraceMap().get(traceBox.getSelectedItem().toString()));
             }
         });
         traceBox.setPreferredSize(new Dimension(100, 27));
