@@ -142,7 +142,15 @@ public class Animator {
         return this.traceMap;
     }
 
+    public void switchTrace(TAPNNetworkTrace trace) {
+        setTrace(trace, currentMarkingIndex);
+    }
+
     public void setTrace(TAPNNetworkTrace trace) {
+        setTrace(trace, 0);
+    }
+
+    private void setTrace(TAPNNetworkTrace trace, int targetIndex) {
         tab.setAnimationMode(true, tab.getLens().isColored());
 
         try {
@@ -165,13 +173,21 @@ public class Animator {
                 setUntimedTrace(trace);
                 isDisplayingUntimedTrace = true;
             }
-            currentAction = -1;
-            currentMarkingIndex = 0;
+   
+            while (trace.isConcreteTrace() && currentMarkingIndex < targetIndex) {
+                int previousIndex = currentMarkingIndex;
+                extendTrace();
+                if (currentMarkingIndex == previousIndex) break;
+            }
+
+            currentMarkingIndex = Math.min(targetIndex, markings.size() - 1);
+            currentAction = currentMarkingIndex - 1;
+            updateBindings(currentAction + 1);
             tab.network().setMarking(markings.get(currentMarkingIndex));
             updateColoredMarking();
             refreshAnimation();
             activeGuiModel().redrawVisibleTokenLists();
-            tab.getAnimationHistorySidePanel().setSelectedIndex(0);
+            tab.getAnimationHistorySidePanel().setSelectedIndex(currentMarkingIndex);
             updateAnimationButtonsEnabled();
             updateFireableTransitions();
         } catch (Exception e) {
@@ -233,7 +249,7 @@ public class Animator {
         int firstAction = actionHistory.size();
         List<String> historyItems = new ArrayList<>();
         boolean engineMarkingCurrent = false;
-        for (var step : trace) {
+        for (var step : steps) {
             NetworkMarking marking;
             if (step instanceof TAPNNetworkColoredTransitionStep) {
                 var coloredStep = (TAPNNetworkColoredTransitionStep)step;
@@ -587,24 +603,7 @@ public class Animator {
             int action = currentAction;
             int markingIndex = currentMarkingIndex;
 
-            if (trace instanceof TimedTAPNNetworkTrace) {
-                TimedTAPNNetworkTrace timedTrace = (TimedTAPNNetworkTrace)trace;
-                if (timedTrace.getTraceType() == TraceType.EG_DELAY_FOREVER) {
-                    addMarking(new TAPNNetworkTimeDelayStep(BigDecimal.ONE), currentMarking().delay(BigDecimal.ONE));
-                }
-
-                if (timedTrace.getLoopToIndex() != -1) {
-                    addToTimedTrace(timedTrace.getLoopSteps());
-                }
-            } else if (trace instanceof ColoredTAPNNetworkTrace coloredTrace) {
-                if (coloredTrace.getTraceType() == TraceType.EG_DELAY_FOREVER) {
-                    addMarking(new TAPNNetworkTimeDelayStep(BigDecimal.ONE), currentMarking().delay(BigDecimal.ONE));
-                }
-
-                if (coloredTrace.getLoopToIndex() != -1) {
-                    addToColoredTrace(coloredTrace.getLoopSteps());
-                }
-            }
+            extendTrace();
 
             tab.getAnimationHistorySidePanel().setSelectedIndex(selectedIndex);
             currentAction = action;
@@ -624,6 +623,27 @@ public class Animator {
             currentAction++;
             currentMarkingIndex++;
             restoreCurrentMarking();
+        }
+    }
+
+    private void extendTrace() {
+        if (trace instanceof TimedTAPNNetworkTrace) {
+            TimedTAPNNetworkTrace timedTrace = (TimedTAPNNetworkTrace)trace;
+            if (timedTrace.getTraceType() == TraceType.EG_DELAY_FOREVER) {
+                addMarking(new TAPNNetworkTimeDelayStep(BigDecimal.ONE), currentMarking().delay(BigDecimal.ONE));
+            }
+
+            if (timedTrace.getLoopToIndex() != -1) {
+                addToTimedTrace(timedTrace.getLoopSteps());
+            }
+        } else if (trace instanceof ColoredTAPNNetworkTrace coloredTrace) {
+            if (coloredTrace.getTraceType() == TraceType.EG_DELAY_FOREVER) {
+                addMarking(new TAPNNetworkTimeDelayStep(BigDecimal.ONE), currentMarking().delay(BigDecimal.ONE));
+            }
+
+            if (coloredTrace.getLoopToIndex() != -1) {
+                addToColoredTrace(coloredTrace.getLoopSteps());
+            }
         }
     }
 
